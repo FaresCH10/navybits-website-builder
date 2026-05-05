@@ -1,0 +1,31 @@
+.wrap {
+  min-height: 100vh;
+  background: #08080a;
+  color: #f4f4f5;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 8, 10, 0.92);
+  backdrop-filter: blur(10px);
+}
+
+.back {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.back:hover {
+  color: #fff;
+}
+
+.badge {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}

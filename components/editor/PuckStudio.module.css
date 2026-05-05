@@ -1,0 +1,519 @@
+.shell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: calc(100vh - 49px);
+  background: var(--nb-bg, #08080a);
+  color: #f4f4f5;
+}
+
+.sidebar {
+  border-right: 1px solid var(--nb-border, rgba(255, 255, 255, 0.08));
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(10, 10, 12, 0.95);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  font-size: 0.95rem;
+}
+
+.brandMark {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #7c6cff, #4ecdc4);
+}
+
+.sidebarSection {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.pagesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.addPageBtn {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.addPageBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.addPageForm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.addPageInput {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+
+.addPageInput::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.addPageActions {
+  display: flex;
+  gap: 6px;
+}
+
+.addPageConfirm {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 7px;
+  border: none;
+  background: #7c6cff;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.addPageConfirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.addPageCancel {
+  padding: 6px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.navItem:hover .navDeleteBtn {
+  opacity: 1;
+}
+
+.navLink,
+.navLinkActive {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.65);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navLink:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+.navLinkActive {
+  background: rgba(124, 108, 255, 0.15);
+  color: #fff;
+}
+
+.navDeleteBtn {
+  opacity: 0;
+  position: absolute;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: none;
+  background: rgba(255, 80, 80, 0.18);
+  color: #ff9c9c;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: opacity 0.12s, background 0.12s;
+  flex-shrink: 0;
+}
+
+.navDeleteBtn:hover {
+  background: rgba(255, 80, 80, 0.35);
+  color: #fff;
+}
+
+.back {
+  margin-top: auto;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.45);
+  padding: 8px 10px;
+}
+
+.back:hover {
+  color: #fff;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--nb-border, rgba(255, 255, 255, 0.08));
+  background: rgba(12, 12, 15, 0.9);
+  backdrop-filter: blur(12px);
+}
+
+.toolbarLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pageSlug {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.previewHint {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ghostBtn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.ghostBtn:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.saveBadge {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.saveBadge[data-state="saved"] {
+  color: #7dffb3;
+}
+
+.saveBadge[data-state="error"] {
+  color: #ff7d7d;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.splitClosed {
+  grid-template-columns: 1fr auto;
+}
+
+@media (max-width: 1100px) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+  .inspector {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* Light editor chrome: readable labels inherit dark text (fixes white-on-white blocks list) */
+.puckHost {
+  min-height: 560px;
+  min-width: 0;
+  background: #e8eaee;
+  color: #0f172a;
+}
+
+/* Scope Puck to light UI — do not override grey scale with translucent white (breaks drawer labels) */
+.puckHost :global(.Puck) {
+  color: #0f172a;
+}
+
+/* Main canvas / preview surface — white (default Puck grey-11 is already light; reinforce inner frame) */
+.puckHost :global([class*="PuckCanvas"]) {
+  background: #ffffff !important;
+}
+.puckHost :global([class*="PuckPreview"]) {
+  background: #f1f5f9;
+}
+
+.inspector {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0a0a0d;
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  overflow: hidden;
+  transition: width 0.2s ease;
+  /* Native <select> dropdown uses OS styling — dark scheme makes the popup black/dark on Chromium & Safari */
+  color-scheme: dark;
+}
+
+.inspectorCollapsed {
+  width: 36px;
+}
+
+.inspectorHeader {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.inspectorToggle {
+  width: 36px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: color 0.12s, background 0.12s;
+}
+
+.inspectorToggle:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tabs {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+
+.tab,
+.tabOn {
+  flex: 1;
+  padding: 12px;
+  font-size: 0.82rem;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+}
+
+.tabOn {
+  color: #fff;
+  border-bottom: 2px solid #7c6cff;
+}
+
+.panel {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panelIntro {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  resize: vertical;
+  min-height: 120px;
+}
+
+.primaryBtn {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, #6e5cff, #9d7bff);
+  color: #fff;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.secondaryBtn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #ff8c8c;
+}
+
+.muted {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.libList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.libItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.libName {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.libMeta {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.smallBtn {
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.libActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dangerBtn {
+  padding: 4px 8px;
+  font-size: 1rem;
+  line-height: 1;
+  border-radius: 6px;
+  border: none;
+  background: rgba(255, 100, 100, 0.15);
+  color: #ff9c9c;
+  cursor: pointer;
+}
+
+.fieldLab {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+}
+
+.previewSection {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #050506;
+}
+
+.previewHeader {
+  padding: 10px 20px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.previewFrame {
+  padding: 0 0 48px;
+}

@@ -1,38 +1,64 @@
-# `next` recipe
+# NavyBits Studio — AI website builder (Puck + Next.js)
 
-The `next` recipe showcases one of the most powerful ways to implement Puck using to provide an authoring tool for any route in your Next app.
+Visual, drag-and-drop page building with **Puck**, **Google Gemini 2.0 Flash** (JSON block generation), and **MongoDB** for users, projects, and pages. Authentication uses **HTTP-only JWT cookies**; the dashboard **React context** exposes the signed-in user to client components.
 
-## Demonstrates
+## Features
 
-- Next.js App Router implementation
-- JSON database implementation with HTTP API
-- Catch-all routes to use puck for any route on the platform
-- Incremental static regeneration (ISR) for all Puck pages
+- **Puck editor** with categories, root SEO fields, slots (via `renderDropZone`), richtext, array, object, radio/select, number, `inline` blocks, `resolveData` (TopicBanner), `permissions`, **outline** + **blocks** plugins, and iframe preview.
+- **Gemini** returns structured JSON that matches your component registry; blocks are normalized and appended to the page.
+- **Projects & pages** per user; each project gets a `home` page on create.
+- **Public URLs** at `/p/{projectSlug}` and `/p/{projectSlug}/{pageSlug}`.
+- **Full-screen studio** at `/studio/{projectId}/editor/{pageId}` (Framer-style dark UI).
+- **Saved components** library (CRUD) — save presets with JSON props and insert onto the canvas.
 
-## Usage
+## Setup
 
-Run the generator and enter `next` when prompted
+1. Copy environment variables:
 
-```
-npx create-puck-app my-app
-```
+   ```bash
+   cp .env.example .env.local
+   ```
 
-Start the server
+2. Fill in:
 
-```
-yarn dev
-```
+   - `MONGODB_URI` — e.g. MongoDB Atlas or `mongodb://127.0.0.1:27017/navybits`
+   - `AUTH_SECRET` — long random string (16+ characters)
+   - `GEMINI_API_KEY` — from [Google AI Studio](https://aistudio.google.com/apikey)
+   - (Optional) `GEMINI_MODEL` — defaults to `gemini-2.5-flash-lite`; try `gemini-2.5-flash` or `gemini-1.5-flash` if you hit quota ([rate limits](https://ai.google.dev/gemini-api/docs/rate-limits))
 
-Navigate to the homepage at https://localhost:3000. To edit the homepage, access the Puck editor at https://localhost:3000/edit.
+3. Install and run:
 
-You can do this for any route on the application, **even if the page doesn't exist**. For example, visit https://localhost:3000/hello/world and you'll receive a 404. You can author and publish a page by visiting https://localhost:3000/hello/world/edit. After publishing, go back to the original URL to see your page.
+   ```bash
+   npm install
+   npm run dev
+   ```
 
-## Using this recipe
+4. Open [http://localhost:3000](http://localhost:3000), register, create a project, open a page in the **Studio** editor, describe a section in **Gemini**, then click **Publish** in Puck to persist to MongoDB.
 
-To adopt this recipe you will need to:
+## Scripts
 
-- **IMPORTANT** Add authentication to `/edit` routes. This can be done by modifying the example API routes in `/app/puck/api/route.ts` and server component in `/app/puck/[...puckPath]/page.tsx`. **If you don't do this, Puck will be completely public.**
-- Integrate your database into the API calls in `/app/puck/api/route.ts`
-- Implement a custom puck configuration in `puck.config.tsx`
+| Command       | Description              |
+| ------------- | ------------------------ |
+| `npm run dev` | Next.js dev (Turbopack)  |
+| `npm run build` | Production build       |
+| `npm start`   | Start production server  |
 
-By default, this recipe will generate static pages by setting `dynamic` to [`force-static`](https://nextjs.org/docs/app/api-reference/file-conventions/route-segment-config#dynamic) in the `/app/[...puckPath]/page.tsx`. This will strip headers and cookies. If you need dynamic pages, you can delete this.
+## Architecture (short)
+
+- `lib/puck-config.tsx` — Puck `Config` (all block types + root).
+- `lib/ai/*` — Gemini client (default `gemini-2.5-flash-lite`, env `GEMINI_MODEL`), model fallbacks on quota, prompt schema, block normalization.
+- `lib/models/*` — Mongoose models (`User`, `Project`, `Page`, `SavedComponent`).
+- `lib/auth/*` — JOSE JWT in cookies; Edge-safe verification for middleware.
+- `middleware.ts` — protects `/dashboard` and `/studio` (redirect to `/login`).
+- `app/p/*` — public `Render` output for published pages.
+
+## Evaluation / deliverables
+
+- **Repo**: this repository.
+- **Demo**: run locally or deploy to Vercel/your host; set the same env vars.
+- **Docs**: this file + inline API routes.
+
+## Notes
+
+- Next.js 16 may log a deprecation notice about `middleware` vs `proxy`; auth still works. Migrate when you upgrade following the official migration guide.
+- Ensure Atlas IP allowlist / network access if using MongoDB Atlas.
