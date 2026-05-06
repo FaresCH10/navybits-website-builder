@@ -390,16 +390,12 @@ export function PuckStudio({
             {inspectorOpen && activeTab === "ai" && (
               <div className={styles.panel}>
                 <p className={styles.panelIntro}>
-                  Enter a library name (used for every block saved from this run),
-                  then describe what to generate. Gemini (see{" "}
-                  <code style={{ fontSize: "0.8rem", opacity: 0.85 }}>
-                    GEMINI_MODEL
-                  </code>{" "}
-                  in env; default Flash-Lite) returns Puck JSON (nested sections,
-                  heroes, grids). Each generated top-level block is saved to the
-                  Library under this project. Multiple blocks get suffixes{" "}
+                  Give this batch a Library name, then describe what you want to
+                  create. The generated blocks are added to your page and also
+                  saved to this project&apos;s Library using that name. If more than
+                  one block is created, names are numbered automatically, like{" "}
                   <code style={{ fontSize: "0.8rem", opacity: 0.85 }}>(1/3)</code>
-                  , etc.
+                  .
                 </p>
                 <label className={styles.fieldLab} htmlFor="gemini-library-name">
                   Library name

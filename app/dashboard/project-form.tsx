@@ -33,16 +33,25 @@ export function CreateProjectForm() {
 
   return (
     <form onSubmit={submit} className={styles.createRow}>
+      <label htmlFor="new-project-name" className={styles.srOnly}>
+        Project name
+      </label>
       <input
+        id="new-project-name"
         className={styles.createInput}
         placeholder="New project name"
         value={name}
         onChange={(e) => setName(e.target.value)}
+        aria-describedby={error ? "new-project-error" : undefined}
       />
-      <button className={styles.createBtn} type="submit" disabled={busy}>
-        {busy ? "…" : "Create"}
+      <button className={styles.createBtn} type="submit" disabled={busy} aria-busy={busy}>
+        {busy ? "Creating…" : "Create"}
       </button>
-      {error && <span className={styles.inlineErr}>{error}</span>}
+      {error && (
+        <span id="new-project-error" role="alert" className={styles.inlineErr}>
+          {error}
+        </span>
+      )}
     </form>
   );
 }
