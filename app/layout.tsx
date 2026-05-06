@@ -1,9 +1,13 @@
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-export const metadata = {
+const inter = Inter({ subsets: ["latin"], display: "swap" });
+
+export const metadata: Metadata = {
   title: "NavyBits Website Builder",
   description:
-    "Welcome to NavyBits Website Builder — visual editing, AI-assisted drafts, and your own projects in one place.",
+    "Build pages visually with drag-and-drop, get AI-generated drafts, and publish your projects — all in one place.",
 };
 
 export default function RootLayout({
@@ -12,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.className}>
       <body>{children}</body>
     </html>
   );

@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,w14..32,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
-
 :root {
   --nb-bg: #08080a;
   --nb-surface: #0f0f12;
@@ -112,4 +110,55 @@ select {
 }
 .nb-rich .rich-text {
   outline: none;
+}
+
+/* Skip to content link — visible only on keyboard focus */
+.nb-skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 8px;
+  z-index: 9999;
+  padding: 8px 16px;
+  background: var(--nb-accent);
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.nb-skip-link:focus {
+  left: 16px;
+}
+
+/* Landing page button hover states */
+.nb-btn-primary {
+  transition: opacity 150ms ease;
+}
+.nb-btn-primary:hover {
+  opacity: 0.88;
+}
+.nb-btn-outline {
+  transition: border-color 150ms ease, color 150ms ease;
+}
+.nb-btn-outline:hover {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  color: #fff !important;
+}
+.nb-btn-nav {
+  transition: color 150ms ease;
+}
+.nb-btn-nav:hover {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+.nb-btn-accent {
+  transition: opacity 150ms ease;
+}
+.nb-btn-accent:hover {
+  opacity: 0.88;
+}
+.nb-feature-card {
+  transition: border-color 150ms ease, background 150ms ease;
+}
+.nb-feature-card:hover {
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
 }
