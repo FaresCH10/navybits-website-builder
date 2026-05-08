@@ -8,6 +8,9 @@ import { mergeIntoData } from "@/lib/puck/merge-data";
 import { preparePuckPageData } from "@/lib/puck/prepare-page-data";
 import { buildInsertedBlock } from "@/lib/puck/build-inserted-block";
 import { assignFreshIds, stripIdsFromProps } from "@/lib/puck/block-tree-ids";
+import { flattenComposition } from "@/lib/ai/flatten-composition";
+import { buildUserPuckConfig } from "@/lib/puck/user-puck-config";
+import type { SavedComponentItem } from "@/lib/puck/user-puck-config";
 import "@puckeditor/core/puck.css";
 import styles from "./PuckStudio.module.css";
 import { DarkSelect } from "./DarkSelect";
@@ -25,12 +28,7 @@ const COMPONENT_TYPE_OPTIONS = [
 ] as const;
 
 type PageInfo = { id: string; name: string; slug: string };
-type SavedItem = {
-  id: string;
-  name: string;
-  componentType: string;
-  props: Record<string, unknown>;
-};
+type SavedItem = SavedComponentItem;
 
 export function PuckStudio({
   projectId,
@@ -40,6 +38,7 @@ export function PuckStudio({
   projectSlug,
   pageSlug,
   previewPath,
+  initialSavedList = [],
 }: {
   projectId: string;
   pageId: string;
@@ -48,6 +47,7 @@ export function PuckStudio({
   projectSlug: string;
   pageSlug: string;
   previewPath: string;
+  initialSavedList?: SavedItem[];
 }) {
   const [data, setData] = useState<Data>(initialData);
   /** Puck only reads `data` on first mount; bumping this remounts the editor so Library/AI updates apply. */
@@ -71,12 +71,17 @@ export function PuckStudio({
   const [activeTab, setActiveTab] = useState<"ai" | "library" | "edit">("ai");
   const puckRemountTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [inspectorOpen, setInspectorOpen] = useState(true);
-  const [savedList, setSavedList] = useState<SavedItem[]>([]);
+  const [savedList, setSavedList] = useState<SavedItem[]>(initialSavedList);
   const [libLoading, setLibLoading] = useState(false);
 
   const plugins = useMemo(
     () => [outlinePlugin(), blocksPlugin()],
     []
+  );
+
+  const extendedConfig = useMemo(
+    () => buildUserPuckConfig(savedList),
+    [savedList]
   );
 
   const loadLibrary = useCallback(async () => {
@@ -237,37 +242,43 @@ export function PuckStudio({
         let name = `${compLibName.trim()}${suffix}`;
         if (name.length > 120) name = `${name.slice(0, 117)}…`;
         return {
+          // Canvas block — full tree with fresh IDs at every level
           block: assignFreshIds({ ...b, props: { ...b.props, name } } as ComponentData),
           name,
-          type: b.type,
-          rawProps: b.props as Record<string, unknown>,
+          rawBlock: b, // original without IDs, used for flattening
         };
       });
 
+      // Land all root blocks on the canvas
       setData((prev) =>
         preparePuckPageData(mergeIntoData(prev, namedBlocks.map((n) => n.block)))
       );
-      setPuckMountKey((k) => k + 1);
       setCompPrompt("");
 
-      let librarySaveFailed = false;
-      for (const { name, type, rawProps } of namedBlocks) {
-        const saveRes = await fetch("/api/saved-components", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            componentType: type,
-            props: stripIdsFromProps(rawProps),
-            projectId,
-          }),
-        });
-        if (!saveRes.ok) librarySaveFailed = true;
+      let saveFailed = false;
+      for (const { name: rootName, rawBlock } of namedBlocks) {
+        const flatNodes = flattenComposition(rawBlock, rootName);
+        for (const node of flatNodes) {
+          const saveRes = await fetch("/api/saved-components", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: node.name,
+              componentType: node.type,
+              props: node.props,
+              projectId,
+            }),
+          });
+          if (!saveRes.ok) saveFailed = true;
+        }
       }
-      if (librarySaveFailed) {
-        setCompError("Blocks added to page but saving some library items failed.");
+
+      if (saveFailed) {
+        setCompError("Blocks added to page but some component saves failed.");
       }
-      loadLibrary();
+
+      await loadLibrary();
+      setPuckMountKey((k) => k + 1);
     } catch (e) {
       setCompError(e instanceof Error ? e.message : "Request failed");
     } finally {
@@ -297,7 +308,10 @@ export function PuckStudio({
     const res = await fetch(`/api/saved-components/${id}`, {
       method: "DELETE",
     });
-    if (res.ok) loadLibrary();
+    if (res.ok) {
+      await loadLibrary();
+      setPuckMountKey((k) => k + 1);
+    }
   };
 
   const [presetName, setPresetName] = useState("");
@@ -431,7 +445,7 @@ export function PuckStudio({
           <div className={styles.puckHost}>
             <Puck
               key={`puck-${pageId}-${puckMountKey}`}
-              config={puckConfig}
+              config={extendedConfig as typeof puckConfig}
               data={data}
               onChange={setData}
               onPublish={onPublish}

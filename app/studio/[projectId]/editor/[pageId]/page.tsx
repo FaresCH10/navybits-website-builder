@@ -5,6 +5,7 @@ import { connectDB } from "@/lib/mongodb";
 import { preparePuckPageData } from "@/lib/puck/prepare-page-data";
 import { Project } from "@/lib/models/Project";
 import { Page } from "@/lib/models/Page";
+import { SavedComponent } from "@/lib/models/SavedComponent";
 import { getSessionFromCookies } from "@/lib/auth/session";
 import { PuckStudio } from "@/components/editor/PuckStudio";
 
@@ -40,6 +41,13 @@ export default async function StudioEditorPage({
     .sort({ updatedAt: -1 })
     .lean();
 
+  const savedComponents = await SavedComponent.find({
+    userId: new mongoose.Types.ObjectId(session.sub),
+    projectId: project._id,
+  })
+    .sort({ updatedAt: -1 })
+    .lean();
+
   const initialData = preparePuckPageData(page.puckData as Data);
   const previewPath =
     page.slug === "home"
@@ -60,6 +68,12 @@ export default async function StudioEditorPage({
       projectSlug={project.slug}
       pageSlug={page.slug}
       previewPath={previewPath}
+      initialSavedList={savedComponents.map((s) => ({
+        id: s._id.toString(),
+        name: s.name,
+        componentType: s.componentType,
+        props: s.props as Record<string, unknown>,
+      }))}
     />
   );
 }
