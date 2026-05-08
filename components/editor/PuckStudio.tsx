@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { ComponentData, Data } from "@puckeditor/core";
 import { Puck, blocksPlugin, outlinePlugin } from "@puckeditor/core";
 import { puckConfig } from "@/lib/puck-config";
@@ -11,6 +11,8 @@ import { assignFreshIds, stripIdsFromProps } from "@/lib/puck/block-tree-ids";
 import "@puckeditor/core/puck.css";
 import styles from "./PuckStudio.module.css";
 import { DarkSelect } from "./DarkSelect";
+import { HtmlEditPanel } from "./HtmlEditPanel";
+import { updateBlockHtml } from "@/lib/html-block-editor";
 
 const COMPONENT_TYPE_OPTIONS = [
   { value: "Heading", label: "Heading" },
@@ -58,10 +60,16 @@ export function PuckStudio({
   const [aiLibraryName, setAiLibraryName] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [geminiSubTab, setGeminiSubTab] = useState<"html" | "component">("html");
+  const [compPrompt, setCompPrompt] = useState("");
+  const [compLibName, setCompLibName] = useState("");
+  const [compBusy, setCompBusy] = useState(false);
+  const [compError, setCompError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">(
     "idle"
   );
-  const [activeTab, setActiveTab] = useState<"ai" | "library">("ai");
+  const [activeTab, setActiveTab] = useState<"ai" | "library" | "edit">("ai");
+  const puckRemountTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [savedList, setSavedList] = useState<SavedItem[]>([]);
   const [libLoading, setLibLoading] = useState(false);
@@ -158,18 +166,23 @@ export function PuckStudio({
         setAiError(json.error ?? "Generation failed");
         return;
       }
-      const blocks = (json.blocks ?? []) as ComponentData[];
-      setData((prev) => preparePuckPageData(mergeIntoData(prev, blocks)));
-      setPuckMountKey((k) => k + 1);
-      setAiPrompt("");
+      const rawBlocks = (json.blocks ?? []) as ComponentData[];
+      const total = rawBlocks.length;
 
-      const total = blocks.length;
-      let librarySaveFailed = false;
-      for (let i = 0; i < blocks.length; i++) {
-        const b = blocks[i];
+      // Build names and embed them in props before adding to the page
+      const namedBlocks = rawBlocks.map((b, i) => {
         const suffix = total > 1 ? ` (${i + 1}/${total})` : "";
         let name = `${libraryBase}${suffix}`;
         if (name.length > 120) name = `${name.slice(0, 117)}…`;
+        return { block: { ...b, props: { ...b.props, name } } as ComponentData, name };
+      });
+
+      setData((prev) => preparePuckPageData(mergeIntoData(prev, namedBlocks.map((n) => n.block))));
+      setPuckMountKey((k) => k + 1);
+      setAiPrompt("");
+
+      let librarySaveFailed = false;
+      for (const { block: b, name } of namedBlocks) {
         const props = stripIdsFromProps(b.props as Record<string, unknown>);
         const saveRes = await fetch("/api/saved-components", {
           method: "POST",
@@ -196,15 +209,89 @@ export function PuckStudio({
     }
   };
 
+  const runComponentAi = async () => {
+    if (!compPrompt.trim()) return;
+    if (!compLibName.trim()) {
+      setCompError("Enter a library name to save this composition.");
+      return;
+    }
+    setCompBusy(true);
+    setCompError(null);
+    try {
+      const res = await fetch("/api/ai/generate-blocks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: compPrompt }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setCompError(json.error ?? "Generation failed");
+        return;
+      }
+
+      const rawBlocks = (json.blocks ?? []) as ComponentData[];
+      const total = rawBlocks.length;
+
+      const namedBlocks = rawBlocks.map((b, i) => {
+        const suffix = total > 1 ? ` (${i + 1}/${total})` : "";
+        let name = `${compLibName.trim()}${suffix}`;
+        if (name.length > 120) name = `${name.slice(0, 117)}…`;
+        return {
+          block: assignFreshIds({ ...b, props: { ...b.props, name } } as ComponentData),
+          name,
+          type: b.type,
+          rawProps: b.props as Record<string, unknown>,
+        };
+      });
+
+      setData((prev) =>
+        preparePuckPageData(mergeIntoData(prev, namedBlocks.map((n) => n.block)))
+      );
+      setPuckMountKey((k) => k + 1);
+      setCompPrompt("");
+
+      let librarySaveFailed = false;
+      for (const { name, type, rawProps } of namedBlocks) {
+        const saveRes = await fetch("/api/saved-components", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            componentType: type,
+            props: stripIdsFromProps(rawProps),
+            projectId,
+          }),
+        });
+        if (!saveRes.ok) librarySaveFailed = true;
+      }
+      if (librarySaveFailed) {
+        setCompError("Blocks added to page but saving some library items failed.");
+      }
+      loadLibrary();
+    } catch (e) {
+      setCompError(e instanceof Error ? e.message : "Request failed");
+    } finally {
+      setCompBusy(false);
+    }
+  };
+
   const insertSaved = (item: SavedItem) => {
     const raw = buildInsertedBlock(
       item.componentType,
-      (item.props ?? {}) as Record<string, unknown>
+      { ...(item.props ?? {}) as Record<string, unknown>, name: item.name }
     );
     const block = assignFreshIds(raw);
     setData((prev) => preparePuckPageData(mergeIntoData(prev, [block])));
     setPuckMountKey((k) => k + 1);
   };
+
+  const applyHtmlEdit = useCallback((blockId: string, newHtml: string) => {
+    setData((prev) => updateBlockHtml(prev, blockId, newHtml));
+    if (puckRemountTimerRef.current) clearTimeout(puckRemountTimerRef.current);
+    puckRemountTimerRef.current = setTimeout(() => {
+      setPuckMountKey((k) => k + 1);
+    }, 400);
+  }, []);
 
   const deleteSaved = async (id: string) => {
     const res = await fetch(`/api/saved-components/${id}`, {
@@ -383,58 +470,137 @@ export function PuckStudio({
                   >
                     Library
                   </button>
+                  <button
+                    type="button"
+                    className={activeTab === "edit" ? styles.tabOn : styles.tab}
+                    onClick={() => setActiveTab("edit")}
+                  >
+                    Edit
+                  </button>
                 </div>
               )}
             </div>
 
             {inspectorOpen && activeTab === "ai" && (
               <div className={styles.panel}>
-                <p className={styles.panelIntro}>
-                  Give this batch a Library name, then describe what you want to
-                  create. The generated blocks are added to your page and also
-                  saved to this project&apos;s Library using that name. If more than
-                  one block is created, names are numbered automatically, like{" "}
-                  <code style={{ fontSize: "0.8rem", opacity: 0.85 }}>(1/3)</code>
-                  .
-                </p>
-                <label className={styles.fieldLab} htmlFor="gemini-library-name">
-                  Library name
-                </label>
-                <input
-                  id="gemini-library-name"
-                  className={styles.input}
-                  value={aiLibraryName}
-                  onChange={(e) => setAiLibraryName(e.target.value)}
-                  placeholder="e.g. Landing hero"
-                  maxLength={120}
-                  required
-                  autoComplete="off"
-                />
-                <textarea
-                  className={styles.textarea}
-                  placeholder='e.g. "A hero for a SaaS with headline, subcopy, two CTAs, and an image on the right"'
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  rows={6}
-                />
-                {aiError && <p className={styles.error}>{aiError}</p>}
-                <button
-                  type="button"
-                  className={styles.primaryBtn}
-                  disabled={
-                    aiBusy ||
-                    !aiPrompt.trim() ||
-                    !aiLibraryName.trim()
-                  }
-                  onClick={runAi}
-                >
-                  {aiBusy ? "Generating…" : "Generate & append"}
-                </button>
+                {/* Gemini sub-tab bar */}
+                <div className={styles.geminiSubTabBar}>
+                  <button
+                    type="button"
+                    className={geminiSubTab === "html" ? styles.geminiSubTabOn : styles.geminiSubTab}
+                    onClick={() => { setGeminiSubTab("html"); setAiError(null); }}
+                  >
+                    <span className={styles.subTabIcon}>&lt;/&gt;</span>
+                    Custom HTML
+                  </button>
+                  <button
+                    type="button"
+                    className={geminiSubTab === "component" ? styles.geminiSubTabOn : styles.geminiSubTab}
+                    onClick={() => { setGeminiSubTab("component"); setCompError(null); }}
+                  >
+                    <span className={styles.subTabIcon}>&#9670;</span>
+                    Puck Block
+                  </button>
+                </div>
+
+                {/* Custom HTML mode */}
+                {geminiSubTab === "html" && (
+                  <>
+                    <div className={styles.modeBadge}>
+                      <span className={styles.modeDot} data-mode="html" />
+                      Generates raw HTML — full creative control, inline styles
+                    </div>
+                    <p className={styles.panelIntro}>
+                      Describe a section and Gemini will generate polished Custom
+                      HTML. Give the batch a Library name so every section is
+                      saved automatically. Multiple sections are numbered{" "}
+                      <code style={{ fontSize: "0.8rem", opacity: 0.85 }}>(1/3)</code>.
+                    </p>
+                    <label className={styles.fieldLab} htmlFor="gemini-library-name">
+                      Library name
+                    </label>
+                    <input
+                      id="gemini-library-name"
+                      className={styles.input}
+                      value={aiLibraryName}
+                      onChange={(e) => setAiLibraryName(e.target.value)}
+                      placeholder="e.g. Landing hero"
+                      maxLength={120}
+                      required
+                      autoComplete="off"
+                    />
+                    <textarea
+                      className={styles.textarea}
+                      placeholder='e.g. "A hero for a SaaS with headline, subcopy, two CTAs, and an image on the right"'
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      rows={5}
+                    />
+                    {aiError && <p className={styles.error}>{aiError}</p>}
+                    <button
+                      type="button"
+                      className={styles.primaryBtn}
+                      disabled={aiBusy || !aiPrompt.trim() || !aiLibraryName.trim()}
+                      onClick={runAi}
+                    >
+                      {aiBusy ? "Generating…" : "Generate & append"}
+                    </button>
+                  </>
+                )}
+
+                {/* Puck Block mode */}
+                {geminiSubTab === "component" && (
+                  <>
+                    <div className={styles.modeBadge}>
+                      <span className={styles.modeDot} data-mode="component" />
+                      Composes real Puck blocks — every element stays editable
+                    </div>
+                    <p className={styles.panelIntro}>
+                      Gemini builds a full section from nested Puck blocks —
+                      Section, FlexRow, Grid, Card, Heading, Button and more.
+                      Every block lands on the canvas fully editable in the
+                      sidebar. Bold styles included.
+                    </p>
+                    <label className={styles.fieldLab} htmlFor="comp-library-name">
+                      Library name
+                    </label>
+                    <input
+                      id="comp-library-name"
+                      className={styles.input}
+                      value={compLibName}
+                      onChange={(e) => setCompLibName(e.target.value)}
+                      placeholder="e.g. Dark hero section"
+                      maxLength={120}
+                      required
+                      autoComplete="off"
+                    />
+                    <textarea
+                      className={styles.textarea}
+                      placeholder='e.g. "A dark gradient hero with a big headline on the left, product screenshot on the right, and a CTA button"'
+                      value={compPrompt}
+                      onChange={(e) => setCompPrompt(e.target.value)}
+                      rows={5}
+                    />
+                    {compError && <p className={styles.error}>{compError}</p>}
+                    <button
+                      type="button"
+                      className={`${styles.primaryBtn} ${styles.primaryBtnComponent}`}
+                      disabled={compBusy || !compPrompt.trim() || !compLibName.trim()}
+                      onClick={runComponentAi}
+                    >
+                      {compBusy ? "Composing…" : "Generate & compose"}
+                    </button>
+                  </>
+                )}
               </div>
             )}
 
+            {inspectorOpen && activeTab === "edit" && (
+              <HtmlEditPanel data={data} onApply={applyHtmlEdit} />
+            )}
+
             {inspectorOpen && activeTab === "library" && (
-              <div className={styles.panel}>
+              <div className={`${styles.panel} ${styles.editPanel}`}>
                 <p className={styles.panelIntro}>
                   Reusable blocks saved from this workspace. Insert adds to the
                   end of the page.

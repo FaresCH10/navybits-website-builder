@@ -69,6 +69,13 @@ export type PuckBlocks = {
     content: FC;
     title: string;
     elevated: boolean;
+    titleColor: string;
+    background: string;
+    borderColor: string;
+    borderWidth: number;
+    borderRadius: number;
+    padding: number;
+    shadow: string;
   };
   Hero: {
     eyebrow: string;
@@ -101,6 +108,9 @@ export type PuckBlocks = {
   VideoEmbed: {
     url: string;
     aspectRatio: "16/9" | "4/3" | "1/1";
+  };
+  CustomHtml: {
+    html: string;
   };
 };
 
@@ -139,7 +149,7 @@ export const puckConfig: Config<PuckBlocks> = {
     },
     advanced: {
       title: "Advanced",
-      components: ["TopicBanner"],
+      components: ["TopicBanner", "CustomHtml"],
     },
   },
   components: {
@@ -673,6 +683,7 @@ export const puckConfig: Config<PuckBlocks> = {
       label: "Card",
       fields: {
         title: { type: "text", label: "Title" },
+        titleColor: { type: "text", label: "Title color (CSS)" },
         elevated: {
           type: "radio",
           label: "Shadow",
@@ -681,33 +692,75 @@ export const puckConfig: Config<PuckBlocks> = {
             { label: "Elevated", value: true },
           ],
         },
+        background: { type: "text", label: "Background (CSS)" },
+        borderColor: { type: "text", label: "Border color (CSS)" },
+        borderWidth: {
+          type: "number",
+          label: "Border width (px)",
+          min: 0,
+          max: 8,
+        },
+        borderRadius: {
+          type: "number",
+          label: "Corner radius (px)",
+          min: 0,
+          max: 40,
+        },
+        padding: {
+          type: "number",
+          label: "Padding (px)",
+          min: 8,
+          max: 80,
+        },
+        shadow: { type: "text", label: "Shadow (CSS, optional override)" },
         content: { type: "slot", label: "Body" },
       },
       defaultProps: {
-        title: "Card title",
+        title: "",
         elevated: true,
+        titleColor: "",
+        background: "#ffffff",
+        borderColor: "rgba(15,23,42,0.1)",
+        borderWidth: 1,
+        borderRadius: 14,
+        padding: 22,
+        shadow: "",
         content: [] as unknown as FC,
       },
-      render: ({ title, elevated, content: Content }) => (
+      render: ({
+        title,
+        elevated,
+        titleColor,
+        background,
+        borderColor,
+        borderWidth,
+        borderRadius,
+        padding,
+        shadow,
+        content: Content,
+      }) => (
         <div
           style={{
-            borderRadius: 14,
-            padding: "20px 22px",
-            background: "#ffffff",
-            border: "1px solid rgba(15,23,42,0.1)",
-            boxShadow: elevated
-              ? "0 12px 40px rgba(15,23,42,0.08)"
-              : "none",
+            borderRadius,
+            padding: `${padding}px`,
+            background,
+            border: `${borderWidth}px solid ${borderColor}`,
+            boxShadow: shadow
+              ? shadow
+              : elevated
+                ? "0 12px 40px rgba(15,23,42,0.08)"
+                : "none",
           }}
         >
           <div
             style={{
               fontWeight: 600,
-              marginBottom: 12,
+              marginBottom: title?.trim() ? 12 : 0,
               fontSize: "1.05rem",
+              ...(titleColor ? { color: titleColor } : {}),
             }}
           >
-            {title}
+            {title?.trim() ? title : null}
           </div>
           <Content />
         </div>
@@ -1111,6 +1164,18 @@ export const puckConfig: Config<PuckBlocks> = {
           </div>
         );
       },
+    },
+    CustomHtml: {
+      label: "Custom HTML",
+      fields: {
+        html: { type: "textarea", label: "HTML" },
+      },
+      defaultProps: {
+        html: "<p>Custom HTML</p>",
+      },
+      render: ({ html }) => (
+        <div dangerouslySetInnerHTML={{ __html: html }} />
+      ),
     },
   },
   root: {

@@ -41,20 +41,43 @@ export async function POST(request: Request) {
   }
   await connectDB();
   const userId = new mongoose.Types.ObjectId(session.sub);
-  let slug = slugify(parsed.data.name);
-  const exists = await Project.findOne({ userId, slug });
-  if (exists) slug = `${slug}-${Math.random().toString(36).slice(2, 7)}`;
-  const project = await Project.create({
-    userId,
-    name: parsed.data.name.trim(),
-    slug,
-    description: parsed.data.description ?? "",
-  });
+  const name = parsed.data.name.trim();
+  const description = parsed.data.description ?? "";
+  const baseSlug = slugify(name);
+
+  let project: mongoose.HydratedDocument<typeof Project.prototype> | null = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const slug =
+      attempt === 0 ? baseSlug : `${baseSlug}-${Math.random().toString(36).slice(2, 7)}`;
+    try {
+      project = await new Project({
+        userId,
+        name,
+        slug,
+        description,
+      }).save();
+      break;
+    } catch (error) {
+      const isDuplicateKey =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === 11000;
+      if (!isDuplicateKey) throw error;
+    }
+  }
+
+  if (!project) {
+    return NextResponse.json(
+      { error: "Could not create project right now. Please try again." },
+      { status: 409 }
+    );
+  }
   await Page.create({
     projectId: project._id,
     name: "Home",
     slug: "home",
-    puckData: emptyPuckPage(`${parsed.data.name} — Home`),
+    puckData: emptyPuckPage(`${name} — Home`),
   });
   return NextResponse.json({
     project: {

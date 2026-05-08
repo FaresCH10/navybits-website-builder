@@ -262,6 +262,7 @@
 .split {
   display: grid;
   grid-template-columns: 1fr auto;
+  grid-template-rows: 1fr;
   flex: 1;
   min-height: 0;
 }
@@ -307,7 +308,8 @@
   display: flex;
   flex-direction: column;
   width: 320px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   transition: width 0.2s ease;
   /* Native <select> dropdown uses OS styling — dark scheme makes the popup black/dark on Chromium & Safari */
   color-scheme: dark;
@@ -322,6 +324,10 @@
   align-items: stretch;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #0a0a0d;
 }
 
 .inspectorToggle {
@@ -372,6 +378,11 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.editPanel {
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
 }
 
 .panelIntro {
@@ -516,4 +527,151 @@
 
 .previewFrame {
   padding: 0 0 48px;
+}
+
+/* ── Edit panel ─────────────────────────────────────────── */
+
+.editSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.editSectionTitle {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.3);
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.editRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.editLabel {
+  font-size: 0.73rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.colorRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.colorInput {
+  width: 34px;
+  height: 34px;
+  padding: 3px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.colorText {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  font-size: 0.82rem;
+  font-family: monospace;
+}
+
+/* ── Gemini sub-tab bar ─────────────────────────────────────── */
+
+.geminiSubTabBar {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 11px;
+}
+
+.geminiSubTab,
+.geminiSubTabOn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s, border-color 0.14s;
+  white-space: nowrap;
+}
+
+.geminiSubTab {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.geminiSubTab:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.geminiSubTabOn {
+  background: rgba(124, 108, 255, 0.16);
+  color: #c4b5ff;
+  border-color: rgba(124, 108, 255, 0.32);
+  font-weight: 600;
+}
+
+.subTabIcon {
+  font-size: 0.72rem;
+  opacity: 0.85;
+  font-family: monospace;
+}
+
+/* ── Mode badge ─────────────────────────────────────────────── */
+
+.modeBadge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  line-height: 1.4;
+}
+
+.modeDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.modeDot[data-mode="html"] {
+  background: #4ecdc4;
+  box-shadow: 0 0 6px rgba(78, 205, 196, 0.55);
+}
+
+.modeDot[data-mode="component"] {
+  background: #a78bfa;
+  box-shadow: 0 0 6px rgba(167, 139, 250, 0.55);
+}
+
+/* ── Puck Block button variant ──────────────────────────────── */
+
+.primaryBtnComponent {
+  background: linear-gradient(135deg, #6d28d9, #a78bfa);
 }

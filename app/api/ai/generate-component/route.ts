@@ -2,11 +2,30 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionFromCookies } from "@/lib/auth/session";
 import { generateGeminiJson } from "@/lib/ai/gemini";
-import { HTML_AI_SYSTEM } from "@/lib/ai/component-schema-prompt";
-import { normalizeAiBlocks } from "@/lib/ai/normalize-ai-blocks";
+import { COMPONENT_GEN_SYSTEM } from "@/lib/ai/component-gen-prompt";
 
 const bodySchema = z.object({
   prompt: z.string().min(3).max(8000),
+});
+
+const GENERATABLE_TYPES = [
+  "Heading",
+  "TextBlock",
+  "ImageBlock",
+  "ButtonBlock",
+  "Hero",
+  "FeatureList",
+  "QuoteBlock",
+  "CtaGroup",
+  "TopicBanner",
+  "VideoEmbed",
+  "Spacer",
+  "Divider",
+] as const;
+
+const resultSchema = z.object({
+  type: z.enum(GENERATABLE_TYPES),
+  props: z.record(z.string(), z.unknown()),
 });
 
 export async function POST(request: Request) {
@@ -14,12 +33,14 @@ export async function POST(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
   const json = await request.json().catch(() => null);
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid prompt" }, { status: 400 });
   }
-  const fullPrompt = `${HTML_AI_SYSTEM}\n\nUser request:\n${parsed.data.prompt}\n\nReturn JSON: { "blocks": [{ "html": "..." }] }`;
+
+  const fullPrompt = `${COMPONENT_GEN_SYSTEM}\n\nUser request:\n${parsed.data.prompt}\n\nReturn JSON: { "type": "ComponentType", "props": { ... } }`;
 
   try {
     const text = await generateGeminiJson(fullPrompt);
@@ -32,8 +53,16 @@ export async function POST(request: Request) {
         { status: 422 }
       );
     }
-    const blocks = normalizeAiBlocks(raw);
-    return NextResponse.json({ blocks });
+
+    const result = resultSchema.safeParse(raw);
+    if (!result.success) {
+      return NextResponse.json(
+        { error: "AI returned an unsupported component type. Try rephrasing." },
+        { status: 422 }
+      );
+    }
+
+    return NextResponse.json({ component: result.data });
   } catch (e) {
     console.error(e);
     const msg = e instanceof Error ? e.message : "Generation failed";
@@ -46,7 +75,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Gemini quota or rate limit. In .env.local set GEMINI_MODEL=gemini-2.5-flash-lite or gemini-2.5-flash, confirm the key at https://aistudio.google.com/apikey , enable Generative Language API for the project, or attach billing. Retry after a minute.",
+            "Gemini quota or rate limit. Retry after a minute.",
           detail: msg,
         },
         { status: 429 }

@@ -1,6 +1,6 @@
 import type { ComponentData } from "@puckeditor/core";
 
-const SLOT_KEYS = ["blocks", "content", "left", "right", "extra"] as const;
+const SLOT_KEYS = ["blocks", "content", "left", "right", "extra", "col1", "col2", "col3", "col4"] as const;
 
 function newId(): string {
   return typeof crypto !== "undefined" && crypto.randomUUID
